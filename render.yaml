@@ -1,0 +1,45 @@
+# Render Blueprint — deploys Reconcilio as a free web service.
+# Docs: https://render.com/docs/blueprint-spec
+#
+# How to deploy:
+#   1. Push this repo to GitHub.
+#   2. Render Dashboard → New → Blueprint → connect this repo.
+#   3. Render reads this file, builds, and deploys (free plan, no card).
+#   4. Set the 4 secret env vars below in the dashboard (they are sync:false).
+#   5. Your permanent URL will be https://<service-name>.onrender.com
+#      APP_URL auto-resolves from RENDER_EXTERNAL_URL — no manual edit needed.
+#   6. Put that URL's callback paths into Shopify + Xero app settings:
+#        /auth/shopify/callback   and   /auth/xero/callback
+#
+# NOTE: the free plan has EPHEMERAL storage and spins down when idle. The local
+# token store (.data/tokens.json) is wiped on restart/redeploy, so connected
+# accounts must re-auth. Move tokens to a database before a real launch.
+
+services:
+  - type: web
+    name: reconcilio
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Secrets — set these in the Render dashboard (never commit real values).
+      - key: SHOPIFY_API_KEY
+        sync: false
+      - key: SHOPIFY_API_SECRET
+        sync: false
+      - key: XERO_CLIENT_ID
+        sync: false
+      - key: XERO_CLIENT_SECRET
+        sync: false
+      # Optional — only needed to WRITE one-click fixes back to Xero.
+      - key: ALLOW_XERO_WRITES
+        sync: false
+      - key: XERO_BANK_ACCOUNT_CODE
+        sync: false
+      - key: XERO_SALES_ACCOUNT_CODE
+        sync: false

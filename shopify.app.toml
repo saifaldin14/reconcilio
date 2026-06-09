@@ -1,0 +1,37 @@
+# Shopify app configuration, read by the Shopify CLI.
+# Finish embedding by installing the CLI and running:  shopify app dev
+# Replace the REPLACE_* placeholders with your real values first.
+
+name = "Reconcilio"
+client_id = "REPLACE_WITH_SHOPIFY_API_KEY"
+application_url = "https://REPLACE_WITH_YOUR_PUBLIC_URL"
+embedded = true
+
+[access_scopes]
+# Must match SHOPIFY_SCOPES in your .env
+scopes = "read_orders,read_shopify_payments_payouts"
+
+[auth]
+redirect_urls = [
+  "https://REPLACE_WITH_YOUR_PUBLIC_URL/auth/shopify/callback"
+]
+
+[webhooks]
+api_version = "2025-01"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app_subscriptions/update" ]
+  uri = "/webhooks"
+
+  # Mandatory GDPR compliance webhooks (required for App Store approval).
+  [webhooks.privacy_compliance]
+  customer_data_request_url = "https://REPLACE_WITH_YOUR_PUBLIC_URL/webhooks"
+  customer_deletion_url = "https://REPLACE_WITH_YOUR_PUBLIC_URL/webhooks"
+  shop_deletion_url = "https://REPLACE_WITH_YOUR_PUBLIC_URL/webhooks"
+
+[pos]
+embedded = false
