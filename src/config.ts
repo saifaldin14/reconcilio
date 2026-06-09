@@ -66,7 +66,7 @@ export function loadConfig(): { config?: AppConfig; missing: MissingVar[] } {
       apiKey: read("SHOPIFY_API_KEY")!,
       apiSecret: read("SHOPIFY_API_SECRET")!,
       scopes: read("SHOPIFY_SCOPES") ?? "read_orders,read_shopify_payments_payouts",
-      apiVersion: read("SHOPIFY_API_VERSION") ?? "2025-01",
+      apiVersion: read("SHOPIFY_API_VERSION") ?? "2026-04",
     },
     xero: {
       clientId: read("XERO_CLIENT_ID")!,
