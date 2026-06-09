@@ -13,10 +13,27 @@ import type { ShopifyToken, TokenBackend, XeroToken } from "./backend.js";
  */
 const XERO_SINGLETON = "default";
 
-function sslFor(url: string): false | { rejectUnauthorized: boolean } {
-  return url.includes("localhost") || url.includes("127.0.0.1")
-    ? false
-    : { rejectUnauthorized: false };
+function isLocal(url: string): boolean {
+  return url.includes("localhost") || url.includes("127.0.0.1");
+}
+
+/**
+ * Strip the `sslmode` query param so it doesn't drive pg's SSL behavior, and
+ * decide SSL explicitly instead. This avoids the pg/libpq `sslmode` semantics
+ * change warning and keeps managed providers (Neon, Supabase, Render) working,
+ * where the CA isn't in the local trust store.
+ */
+function buildPoolConfig(connectionString: string): {
+  connectionString: string;
+  ssl: false | { rejectUnauthorized: boolean };
+} {
+  if (isLocal(connectionString)) {
+    return { connectionString, ssl: false };
+  }
+  const cleaned = connectionString.replace(/([?&])sslmode=[^&]*(&|$)/, (_m, pre: string, post: string) =>
+    post === "&" ? pre : "",
+  );
+  return { connectionString: cleaned, ssl: { rejectUnauthorized: false } };
 }
 
 export class PgTokenBackend implements TokenBackend {
@@ -24,7 +41,7 @@ export class PgTokenBackend implements TokenBackend {
   private ready?: Promise<void>;
 
   constructor(connectionString: string) {
-    this.pool = new Pool({ connectionString, ssl: sslFor(connectionString) });
+    this.pool = new Pool(buildPoolConfig(connectionString));
   }
 
   /** Create tables once, lazily, before the first query. */
