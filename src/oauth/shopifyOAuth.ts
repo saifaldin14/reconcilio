@@ -39,6 +39,20 @@ export function verifyShopifyHmac(
 
 const SHOP_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
 
+/**
+ * Normalize user-entered shop input into a bare `*.myshopify.com` domain.
+ * Accepts pasted full URLs (e.g. `https://store.myshopify.com/admin`), a
+ * leading `www.`, trailing slashes/paths, surrounding whitespace, and any case.
+ */
+export function normalizeShop(input: string): string {
+  let s = input.trim().toLowerCase();
+  s = s.replace(/^https?:\/\//, ""); // strip protocol
+  s = s.replace(/^www\./, ""); // strip www.
+  s = s.split("/")[0] ?? ""; // drop any path
+  s = s.split("?")[0] ?? ""; // drop any query string
+  return s;
+}
+
 /** Guard against open-redirect / spoofed shop domains. */
 export function isValidShop(shop: string): boolean {
   return SHOP_REGEX.test(shop);

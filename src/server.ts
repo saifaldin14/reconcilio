@@ -9,6 +9,7 @@ import {
   buildInstallUrl,
   verifyShopifyHmac,
   isValidShop,
+  normalizeShop,
   exchangeShopifyCode,
 } from "./oauth/shopifyOAuth.js";
 import {
@@ -203,9 +204,14 @@ app.get("/", async (_req, res) => {
 
 // --- Shopify OAuth ---
 app.get("/auth/shopify", (req, res) => {
-  const shop = String(req.query.shop ?? "");
+  const shop = normalizeShop(String(req.query.shop ?? ""));
   if (!isValidShop(shop)) {
-    res.status(400).send("Invalid shop domain. Use the form: your-store.myshopify.com");
+    res
+      .status(400)
+      .send(
+        "Invalid shop domain. Enter your store like: your-store.myshopify.com " +
+          "(a full https:// URL is fine too).",
+      );
     return;
   }
   res.redirect(buildInstallUrl(cfg, shop, newState()));
