@@ -19,3 +19,7 @@ npm-debug.log*
 .DS_Store
 .idea/
 .vscode/
+
+# Video render working files (only the final mp4/thumbnail are tracked)
+assets/video/frames/
+assets/video/node_modules/

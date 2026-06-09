@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  :root{
+    --teal:#0E8C73; --teal-d:#0B5D52; --ink:#202223; --sub:#6d7175;
+    --border:#E1E3E5; --bg:#F1F1F1; --surface:#FFFFFF;
+    --red:#c0392b; --amber:#d68910; --green:#1e8449;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1600px;height:900px;overflow:hidden;
+    font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(135deg,var(--teal),var(--teal-d));color:var(--ink)}
+  .stage{position:relative;width:1600px;height:900px}
+
+  /* Browser chrome frame around the app */
+  .window{position:absolute;left:160px;top:96px;width:1280px;height:708px;background:var(--surface);
+    border-radius:18px;box-shadow:0 40px 90px rgba(6,48,43,.45);overflow:hidden}
+  .topbar{height:54px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:8px}
+  .dot{width:12px;height:12px;border-radius:50%}
+  .url{margin-left:16px;height:30px;flex:1;background:#f3f4f6;border-radius:8px;display:flex;align-items:center;padding:0 14px;color:var(--sub);font-size:14px}
+  .brandbar{height:56px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 26px;font-weight:700;font-size:18px;gap:12px}
+  .brandbar .mark{width:26px;height:26px;border-radius:7px;background:var(--teal);position:relative}
+  .brandbar .mark:after{content:"";position:absolute;left:6px;top:13px;width:7px;height:3px;background:#fff;transform:rotate(45deg);box-shadow:3px -3px 0 1px #fff}
+  .content{position:relative;height:598px;padding:0}
+
+  h1{font-size:30px;margin-bottom:8px}
+  .muted{color:var(--sub);font-size:18px}
+
+  /* Connect cards */
+  .card{border:1px solid var(--border);border-radius:14px;padding:22px 24px;margin-top:22px;display:flex;align-items:center;justify-content:space-between}
+  .card h2{font-size:20px}
+  .btn{background:var(--teal);color:#fff;border:0;border-radius:10px;padding:12px 22px;font-size:16px;font-weight:600}
+  .pill{display:inline-flex;align-items:center;gap:8px;color:var(--green);font-weight:600;font-size:16px}
+  .pill:before{content:"";width:10px;height:10px;border-radius:50%;background:var(--green)}
+
+  /* Report */
+  .scorewrap{display:flex;gap:22px;align-items:stretch;margin-top:8px}
+  .score{width:200px;border-radius:16px;background:linear-gradient(180deg,var(--teal),#0B6F5C);
+    color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px}
+  .score .n{font-size:64px;font-weight:800;line-height:1}
+  .score .l{font-size:18px;color:#D7F5EC;margin-top:6px}
+  .counters{flex:1;display:flex;flex-direction:column;gap:14px;justify-content:center}
+  .counter{border:1px solid var(--border);background:#FBFCFD;border-radius:12px;padding:16px 18px;font-size:20px;font-weight:600;display:flex;align-items:center;gap:12px}
+  .cdot{width:12px;height:12px;border-radius:50%}
+
+  .issue{position:relative;border:1px solid var(--border);background:#FBFCFD;border-radius:14px;
+    padding:18px 22px;margin-top:16px;display:flex;align-items:center;justify-content:space-between;overflow:hidden}
+  .issue .bar{position:absolute;left:0;top:0;bottom:0;width:6px}
+  .issue .t{font-size:21px;font-weight:700}
+  .issue .s{font-size:16px;color:var(--sub);margin-top:4px}
+  .fix{background:var(--teal);color:#fff;border-radius:20px;padding:10px 20px;font-size:16px;font-weight:600;transition:all .25s}
+  .fix.resolved{background:#e8f6f0;color:var(--green)}
+
+  /* Cursor (position set per-frame by JS for deterministic capture) */
+  .cursor{position:absolute;width:26px;height:26px;z-index:50;left:780px;top:430px;pointer-events:none}
+  .cursor svg{filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+  .ring{position:absolute;width:46px;height:46px;border-radius:50%;border:3px solid #fff;z-index:49;
+    left:0;top:0;opacity:0;pointer-events:none}
+
+  /* Scene visibility controlled by JS */
+  .scene{position:absolute;inset:0;padding:30px 40px}
+  .hidden{display:none}
+
+  /* Caption strip */
+  .caption{position:absolute;left:160px;bottom:34px;width:1280px;text-align:center;color:#EAFBF5;font-size:22px;font-weight:600;
+    text-shadow:0 1px 6px rgba(0,0,0,.25)}
+</style>
+</head>
+<body>
+<div class="stage">
+  <!-- App window -->
+  <div class="window">
+    <div class="topbar">
+      <span class="dot" style="background:#ff5f57"></span>
+      <span class="dot" style="background:#febc2e"></span>
+      <span class="dot" style="background:#28c840"></span>
+      <span class="url">reconcilio.onrender.com</span>
+    </div>
+    <div class="brandbar"><span class="mark"></span> Reconcilio</div>
+    <div class="content">
+
+      <!-- SCENE 1: Connect -->
+      <div class="scene" id="s1">
+        <h1>Connect your accounts</h1>
+        <p class="muted">Audit your Shopify → Xero books for costly errors.</p>
+        <div class="card">
+          <h2 id="shopH">1. Shopify</h2>
+          <button class="btn" id="shopBtn">Connect Shopify</button>
+          <span class="pill hidden" id="shopOk">Connected</span>
+        </div>
+        <div class="card">
+          <h2 id="xeroH">2. Xero</h2>
+          <button class="btn" id="xeroBtn" style="background:#13b5ea">Connect Xero</button>
+          <span class="pill hidden" id="xeroOk">Connected</span>
+        </div>
+      </div>
+
+      <!-- SCENE 2: Report -->
+      <div class="scene hidden" id="s2">
+        <h1>Books Health Report</h1>
+        <div class="scorewrap" style="margin-top:16px">
+          <div class="score"><div class="n" id="scoreN">76</div><div class="l">Health score</div></div>
+          <div class="counters">
+            <div class="counter"><span class="cdot" style="background:var(--red)"></span><span id="cHigh">2 high priority</span></div>
+            <div class="counter"><span class="cdot" style="background:var(--amber)"></span>1 to review</div>
+          </div>
+        </div>
+        <div class="issue" id="issue1">
+          <div class="bar" style="background:var(--red)"></div>
+          <div>
+            <div class="t">Shopify payout missing in Xero</div>
+            <div class="s">Payout P2 · 485 GBP</div>
+          </div>
+          <div class="fix" id="fix1">Fix this</div>
+        </div>
+        <div class="issue">
+          <div class="bar" style="background:var(--red)"></div>
+          <div>
+            <div class="t">Processor fees not recorded</div>
+            <div class="s">Payout P3 · 24 GBP</div>
+          </div>
+          <div class="fix">Fix this</div>
+        </div>
+        <div class="issue">
+          <div class="bar" style="background:var(--amber)"></div>
+          <div>
+            <div class="t">Multi-currency not converted</div>
+            <div class="s">Payout P4 · USD → GBP</div>
+          </div>
+          <div class="fix">Fix this</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Cursor -->
+  <div class="ring" id="ring"></div>
+  <div class="cursor" id="cursor">
+    <svg width="26" height="26" viewBox="0 0 26 26"><path d="M2 2 L2 22 L8 16 L12 24 L15 22 L11 15 L20 15 Z" fill="#fff" stroke="#202223" stroke-width="1.5"/></svg>
+  </div>
+
+  <div class="caption" id="caption">Connect Shopify and Xero in seconds</div>
+</div>
+
+<script>
+// ---- Deterministic timeline: window.__seek(t) fully sets state for time t. ----
+// Cursor position is interpolated each frame; discrete DOM changes fire at
+// thresholds. This makes frame-by-frame capture smooth and reproducible.
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('ring');
+const caption = document.getElementById('caption');
+const D = 10.0;
+
+// Cursor path keyframes: [time, x, y]
+const path = [
+  [0.0, 1090, 300],
+  [1.2, 1180, 330],   // hover Connect Shopify
+  [1.8, 1180, 330],   // click
+  [2.8, 1180, 430],   // move to Connect Xero
+  [3.4, 1180, 430],   // click
+  [4.6, 760, 470],    // into report
+  [7.0, 1300, 360],   // toward Fix this
+  [7.8, 1300, 360],   // click
+  [9.2, 900, 470],    // settle
+  [10.0, 900, 470],
+];
+function easeInOut(p){ return p<0.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2; }
+function cursorAt(t){
+  for(let i=0;i<path.length-1;i++){
+    const [t0,x0,y0]=path[i], [t1,x1,y1]=path[i+1];
+    if(t>=t0 && t<=t1){
+      const p = t1===t0 ? 1 : easeInOut((t-t0)/(t1-t0));
+      return [x0+(x1-x0)*p, y0+(y1-y0)*p];
+    }
+  }
+  const last=path[path.length-1]; return [last[1],last[2]];
+}
+
+// Click ripples: [time]
+const clicks = [1.8, 3.4, 7.8];
+function ringAt(t){
+  for(const ct of clicks){
+    if(t>=ct && t<ct+0.45){
+      const p=(t-ct)/0.45;
+      return {op: 0.9*(1-p), scale: 0.3+0.8*p};
+    }
+  }
+  return {op:0, scale:0.3};
+}
+
+function setState(t){
+  // Scene + discrete UI state, all derived from t (idempotent).
+  const inReport = t>=4.6;
+  document.getElementById('s1').classList.toggle('hidden', inReport);
+  document.getElementById('s2').classList.toggle('hidden', !inReport);
+
+  // Shopify connected at 1.8
+  const shopOn = t>=1.8;
+  document.getElementById('shopBtn').classList.toggle('hidden', shopOn);
+  document.getElementById('shopOk').classList.toggle('hidden', !shopOn);
+  document.getElementById('shopH').textContent = shopOn ? "1. Shopify ✓" : "1. Shopify";
+
+  // Xero connected at 3.4
+  const xeroOn = t>=3.4;
+  document.getElementById('xeroBtn').classList.toggle('hidden', xeroOn);
+  document.getElementById('xeroOk').classList.toggle('hidden', !xeroOn);
+  document.getElementById('xeroH').textContent = xeroOn ? "2. Xero ✓" : "2. Xero";
+
+  // Fix applied at 8.1
+  const fixed = t>=8.1;
+  const f=document.getElementById('fix1');
+  f.textContent = fixed ? "Resolved ✓" : "Fix this";
+  f.classList.toggle('resolved', fixed);
+  document.getElementById('issue1').style.opacity = fixed ? ".55" : "1";
+  document.getElementById('scoreN').textContent = fixed ? "84" : "76";
+  document.getElementById('cHigh').textContent = fixed ? "1 high priority" : "2 high priority";
+
+  // Captions
+  let cap = "Connect Shopify and Xero in seconds";
+  if(t>=4.6) cap = "See a Books Health Score and every issue found";
+  if(t>=7.0) cap = "Fix problems in Xero with one click";
+  if(t>=9.2) cap = "Reconcilio — keep your Shopify → Xero books accurate";
+  caption.textContent = cap;
+}
+
+window.__seek = function(t){
+  t = Math.max(0, Math.min(D, t));
+  setState(t);
+  const [x,y]=cursorAt(t);
+  cursor.style.left = x+"px"; cursor.style.top = y+"px";
+  const r=ringAt(t);
+  ring.style.left=(x-10)+"px"; ring.style.top=(y-10)+"px";
+  ring.style.opacity=r.op; ring.style.transform="scale("+r.scale+")";
+};
+window.__duration = D;
+window.__seek(0);
+</script>
+</body>
+</html>
