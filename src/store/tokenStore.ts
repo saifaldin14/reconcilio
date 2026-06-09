@@ -1,78 +1,51 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import type { ShopifyToken, TokenBackend, XeroToken } from "./backend.js";
+import { FileTokenBackend } from "./fileBackend.js";
+
+// Re-export the token types so existing imports from "./store/tokenStore.js" keep working.
+export type { ShopifyToken, XeroToken } from "./backend.js";
 
 /**
- * Minimal persistent token store (JSON file) for local development.
+ * Select the storage backend once, at first use:
+ *  - `DATABASE_URL` present  -> Postgres (production; survives restarts).
+ *  - otherwise               -> local JSON file (development).
  *
- * SECURITY: tokens are stored unencrypted on disk here for skeleton simplicity.
- * Before production, swap this for an encrypted secret store or a database with
- * per-shop encryption keys.
+ * The Postgres backend is imported lazily so local dev never needs `pg` to
+ * connect (or a database to be running).
  */
-export interface ShopifyToken {
-  shop: string;
-  accessToken: string;
-}
+let backendPromise: Promise<TokenBackend> | undefined;
 
-export interface XeroToken {
-  accessToken: string;
-  refreshToken: string;
-  tenantId: string;
-  /** epoch ms when the access token expires. */
-  expiresAt: number;
-}
-
-interface StoreShape {
-  shopify: Record<string, ShopifyToken>;
-  xero?: XeroToken;
-}
-
-const FILE = ".data/tokens.json";
-
-async function readStore(): Promise<StoreShape> {
-  try {
-    return JSON.parse(await readFile(FILE, "utf8")) as StoreShape;
-  } catch {
-    return { shopify: {} };
+function getBackend(): Promise<TokenBackend> {
+  if (!backendPromise) {
+    const url = process.env.DATABASE_URL;
+    backendPromise = url
+      ? import("./pgBackend.js").then((m) => new m.PgTokenBackend(url))
+      : Promise.resolve(new FileTokenBackend());
   }
-}
-
-async function writeStore(store: StoreShape): Promise<void> {
-  await mkdir(dirname(FILE), { recursive: true });
-  await writeFile(FILE, JSON.stringify(store, null, 2), "utf8");
+  return backendPromise;
 }
 
 export async function saveShopifyToken(token: ShopifyToken): Promise<void> {
-  const store = await readStore();
-  store.shopify[token.shop] = token;
-  await writeStore(store);
+  return (await getBackend()).saveShopifyToken(token);
 }
 
 export async function getShopifyToken(shop: string): Promise<ShopifyToken | undefined> {
-  const store = await readStore();
-  return store.shopify[shop];
+  return (await getBackend()).getShopifyToken(shop);
 }
 
 /** Remove a shop's stored token (app/uninstalled, shop/redact). */
 export async function deleteShopifyToken(shop: string): Promise<void> {
-  const store = await readStore();
-  delete store.shopify[shop];
-  await writeStore(store);
+  return (await getBackend()).deleteShopifyToken(shop);
 }
 
 /** Convenience for the single-tenant dev dashboard: first connected shop. */
 export async function getAnyShopifyToken(): Promise<ShopifyToken | undefined> {
-  const store = await readStore();
-  const firstKey = Object.keys(store.shopify)[0];
-  return firstKey ? store.shopify[firstKey] : undefined;
+  return (await getBackend()).getAnyShopifyToken();
 }
 
 export async function saveXeroToken(token: XeroToken): Promise<void> {
-  const store = await readStore();
-  store.xero = token;
-  await writeStore(store);
+  return (await getBackend()).saveXeroToken(token);
 }
 
 export async function getXeroToken(): Promise<XeroToken | undefined> {
-  const store = await readStore();
-  return store.xero;
+  return (await getBackend()).getXeroToken();
 }

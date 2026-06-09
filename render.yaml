@@ -11,9 +11,13 @@
 #   6. Put that URL's callback paths into Shopify + Xero app settings:
 #        /auth/shopify/callback   and   /auth/xero/callback
 #
-# NOTE: the free plan has EPHEMERAL storage and spins down when idle. The local
-# token store (.data/tokens.json) is wiped on restart/redeploy, so connected
-# accounts must re-auth. Move tokens to a database before a real launch.
+# NOTE: tokens now persist in Postgres (provisioned below + wired via
+# DATABASE_URL), so connected accounts survive restarts/redeploys. If you
+# prefer a non-expiring free DB, swap in a Neon/Supabase connection string.
+
+databases:
+  - name: reconcilio-db
+    plan: free
 
 services:
   - type: web
@@ -27,6 +31,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Postgres connection string, injected from the database above.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reconcilio-db
+          property: connectionString
       # Secrets — set these in the Render dashboard (never commit real values).
       - key: SHOPIFY_API_KEY
         sync: false
