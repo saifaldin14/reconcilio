@@ -23,7 +23,10 @@ services:
     name: reconcilio
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build
+    # NODE_ENV=production (set below) makes `npm install` skip devDependencies,
+    # but the build needs them (tsc, @types/*). `--include=dev` forces them in
+    # for the build step; runtime still only uses dependencies.
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /
     autoDeploy: true
